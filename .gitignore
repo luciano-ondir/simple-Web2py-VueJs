@@ -1,0 +1,15 @@
+cache/**
+databases/**
+errors/**
+sessions/**
+tmp/**
+uploads/**
+import/**
+languages/**
+progress.log
+*.pyc*
+*.html.*
+*.bak
+*.*~
+private/**
+*.bundle

@@ -1,0 +1,122 @@
+{{extend 'layout.html'}}
+<div v-cloak id="vue">
+<div style="positon:fixed;top:0;left:0;width:100%;height:100vh;z-index:10000000" v-if="is_loading"> Loading... </div>
+  ${ message }
+  <br>
+      <span v-bind:title="message">
+	    Hover your mouse over me for a few seconds
+	    to see my dynamically bound title!
+	  </span>
+	   <br>
+  <div class="container max900">
+    <div class="fill">
+      <div class="padded">
+      
+        <input v-model="keywords" placeholder="type some common words like 'good' or 'one'"/>
+      </div>
+    </div>
+    ${ answer }
+    <div class="fill">
+      <div class="padded" v-for="doc in docs">
+        <div class="lifted padded">
+          <h5>${doc.title}</h5>
+          <p>${doc.body}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="vue2">
+ <h1> ${ my_text } </h1>
+ <br>
+ <button v-on:click="reverseMessage">Reverse Message</button>
+ 
+</div>
+{{block bottomjs}}
+<script>{{=ASSIGNJS(BASE='/'+request.application+'/')}}</script>
+<script src="https://unpkg.com/vue"></script>
+<script src="https://unpkg.com/lodash@4.13.1/lodash.min.js"></script>
+
+<script>
+ 
+window.addEventListener("load", function(event) {
+    // here is the Vue code
+	mainVM.mounted();
+	//alert("terminou de carregar!");
+  });
+  
+var mainVM = new Vue({
+	el: '#vue',
+	delimiters: ['${', '}'],
+	data: {
+		answer: 'Results',
+		page: '',        /* page name */
+		state: {},      /* global page state */
+		keywords: '',   /* example: search field */
+		docs: [],        /* example search response */
+		is_loading: true,
+		message: 'You loaded this page on ' + new Date().toLocaleString()
+	},
+  	watch: {
+	    // whenever keywords change, this function will run
+	    keywords: function (newKeywords) {
+			this.answer = 'Waiting ...'
+			this.getAnswer()
+    	}
+	},
+	methods: {
+	    queryAnswerCallback: function(docs){
+			this.docs=docs; 
+			this.answer = "Results:";
+		},
+		// _.debounce is a function provided by lodash to limit how
+		// often a particularly expensive operation can be run.
+		// In this case, we want to limit how often we access
+		// the search, waiting until the user has completely
+		// finished typing before making the ajax request. To learn
+		// more about the _.debounce function (and its cousin
+		// _.throttle), visit: https://lodash.com/docs#debounce
+		getAnswer: _.debounce(function () {
+			if (this.keywords.length < 3) {
+				this.answer = 'Type more characters...'
+				return
+			}
+		    this.answer = 'Thinking...';
+		    var url = BASE+'default/search';
+		    var data = {q: this.keywords};
+		    var connection = $.getJSON(url, data).fail(self.on_error);
+		    connection.done(this.queryAnswerCallback);
+        },
+	    // This is the number of milliseconds we wait for the
+	    // user to stop typing.
+	    500),
+        mounted: function() {
+    	    this.is_loading=false;
+    	}
+   	}
+
+})
+
+
+  
+vue2 = new Vue({
+	  el: '#vue2',
+	  delimiters: ['${', '}'],
+	  data: {
+	    my_text: 'Segunda vue',
+	  },
+	  methods: {
+		    reverseMessage: function () {
+		      this.my_text = this.my_text.split('').reverse().join('')
+		    }
+	  }// methods
+})// new Vue
+//
+
+</script>
+
+<style>
+ #vue
+ [v-cloak] {display: none;}
+</style>
+{{end}}

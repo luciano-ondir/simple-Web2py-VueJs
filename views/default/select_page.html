@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-us"> 
+<head>
+<script src="{{=URL('static','js/vue.js')}}"></script>
+<!-- <script src="{{=URL('static','js/lodash.min.js')}}"></script> -->
+<script src="{{=URL('static','js/jquery.js')}}"></script>
+<link rel="stylesheet" href="{{=URL('static','css/compiled.min.css')}}"/>
+<link rel="stylesheet" href="{{=URL('static','css/web2py.css')}}"/>
+<link rel="stylesheet" href="{{=URL('static','css/mycss.css')}}"/>
+<link rel="stylesheet" 
+	href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" 
+	integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" 
+	crossorigin="anonymous">
+<link rel="icon" 
+	href="{{=URL('static','images/Icojam-Blue-Bits-Module-puzzle.ico')}}" 
+	type="image/icon">
+<title>{{=titulo}}</title>
+</head>
+<body>
+	<div class="row">
+		<div class="col-sm-5"> 
+			<div id="vue2">
+				<div class="loading-screen" v-if="isLoading" >
+				</div>
+				<div v-else>
+				Number Of Selected Systems: ${ numberOfSelectedSystems }<br>
+				Selected System Id: ${selectedId} <br>
+				<div class="row">
+					
+					<input v-model="userQuery" placeholder="Type keyword..." />
+
+				</div>
+				<center>
+					<div class="row">${feedback2userText}</div>
+					<div class="row">${feedback2user}</div>
+				</center>
+				<ul>
+					<template v-for="sys in systemsList">	
+						<my-list-item
+							:linename="sys.name" 
+							:key="sys.id" 
+							:record-index="sys.id" 
+							:check-callback="beforeSelection"> </my-list-item>
+					</template>	
+				</ul>
+			</div>
+		</div>
+	</div>
+		<div class="col-sm-5"> 
+			<div id="vue3">
+				<div class="loading-screen" v-if="isLoading" ></div>
+				<div v-else>
+					Number Of Selected webpages: ${ numberOfSelectedwebpages }<br>
+					Selected Page Id: ${selectedId} <br>
+					Selected System Id: ${selectedSystem} <br> (This is to demonstrate one Vue object may access others)
+					<input v-model="userQuery" placeholder="Type keyword..." />
+					<div class="row">${feedback2userText}</div>
+					<ul>
+						<template v-for="page in webpagesList">
+							<my-list-item
+								:linename="page.body"
+								:key="page.id"
+								:record-index="page.title"
+								:check-callback="beforeSelection"> </my-list-item>
+						</template>	
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<!-- This is a web2py-ish way to include components -->
+{{include 'vue/my-list-item.vue'}}
+<script>
+window.addEventListener("load", function(event) {
+	/* Using Massimo di Pierro suggestion of using a loading image before page loads.
+	When page finishes loading, the Vue objects render their templates. */
+    // here is the Vue code
+	vue2.getAnswer();
+	vue3.getAnswer();
+  });
+    
+vue2 = new Vue({
+	  el: '#vue2',
+	  delimiters: ['${', '}'],
+	  data: {
+		systemsList: [],
+	    isLoading: true,
+	    numberOfSelectedSystems: 0,
+	    unselectChildCallback: null,
+			selectedId: 0,
+			waitingQuery: false,
+			userQuery: '',
+			feedback2userText: '',
+		},//data
+		computed: {
+			feedback2user: function (){
+				if (true == this.waitingQuery){
+					return "feedback2user - Loading...";
+				}else{
+					return "feedback2user - not loading ";
+				}
+			},
+		},
+		watch: {
+			userQuery: function (newValue){
+				if (this.userQuery.length>0){
+					this.getAnswer();
+					this.waitingQuery = true;
+					this.feedback2userText = "";
+				}else{
+					this.feedback2userText = "Type at least 3 characteres...";
+				}
+			},
+		},
+	  methods: {
+			getAnswer: function () {
+				var query = {q: this.userQuery}
+				var url = "{{=URL('default','json_get_systems')}}";
+				var connection = $.getJSON(url, query).fail(self.on_error);
+				connection.done(this.queryAnswerCallback);
+				this.feedback2userText = "Loading...";
+				},
+			queryAnswerCallback: function(docs){
+				this.systemsList = docs;
+				this.isLoading = false;
+				this.waitingQuery = false;
+				if (this.systemsList.length>0){
+					this.feedback2userText = "Your query returned "+ this.systemsList.length +" results";
+				}else{
+					this.feedback2userText = "No results. Change your query..."
+				}
+			},
+			beforeSelection: function(newFunctionPointer, newId){
+				if (null == newFunctionPointer){
+					this.numberOfSelectedSystems--;
+					this.unselectChildCallback();
+				}else{
+					if (null == this.unselectChildCallback){
+						this.numberOfSelectedSystems++;		        		
+					}else{
+						this.unselectChildCallback();
+					}
+				}
+				this.selectedId = newId;
+				vue3.selectedSystem = newId;
+				this.unselectChildCallback=newFunctionPointer;
+			}
+	  }// methods
+})// new Vue
+
+vue3 = new Vue({
+	  el: '#vue3',
+	  delimiters: ['${', '}'],
+	  data: {
+			webpagesList: {},
+			isLoading: true,
+			numberOfSelectedwebpages: 0,
+			unselectChildCallback: null,
+			selectedId: '',
+			selectedSystem: 0,
+			waitingQuery: false,
+			userQuery: '',
+			feedback2userText: '',
+	  },//data
+		watch: {
+			userQuery: function (newValue){
+				if (this.userQuery.length>0){
+					this.getAnswer();
+					this.waitingQuery = true;
+					this.feedback2userText = "Loading";
+				}else{
+					this.feedback2userText = "Type at least 3 characteres...";
+				}
+			},
+		},
+	  methods: {
+			getAnswer: function () {
+				var query = {q: this.userQuery}
+				var url = "{{=URL('default','json_get_webpages')}}";
+				var connection = $.getJSON(url, query).fail(self.on_error);
+				connection.done(this.queryAnswerCallback);
+				this.feedback2userText = "Loading...";
+				},
+			queryAnswerCallback: function(docs){
+				this.webpagesList = docs;
+				this.isLoading = false;
+				this.waitingQuery = false;
+				if (this.webpagesList.length>0){
+					this.feedback2userText = "Your query returned "+ this.webpagesList.length +" results";
+				}else{
+					this.feedback2userText = "No results. Change your query..."
+				}
+			},
+			beforeSelection: function(newFunctionPointer, newId){
+				if (null == newFunctionPointer){
+					this.numberOfSelectedwebpages--;
+					this.unselectChildCallback();
+				}else{
+					if (null == this.unselectChildCallback){
+						this.numberOfSelectedwebpages++;
+						var url = "{{=URL('default','index')}}";
+						url += '/' + newId + '/';
+						url += this.selectedSystem
+						window.location.href=url;//allows return by browser
+// 		      window.location.replace(url);//does not return by browser
+					}else{
+						this.unselectChildCallback();
+					}
+				}
+				this.selectedId = newId;
+				this.unselectChildCallback=newFunctionPointer;
+			}
+	  }// methods
+})// new Vue
+</script>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-us"> 
+<head>
+<script src="{{=URL('static','js/vue.js')}}"></script>
+<!-- <script src="{{=URL('static','js/lodash.min.js')}}"></script> -->
+<script src="{{=URL('static','js/jquery.js')}}"></script>
+<!-- <link rel="stylesheet" href="{{=URL('static','css/compiled.min.css')}}"/>
+<link rel="stylesheet" href="{{=URL('static','css/web2py.css')}}"/>
+<link rel="stylesheet" 
+	href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" 
+	integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" 
+    crossorigin="anonymous"> -->
+
+<link href="{{=URL('static','css/bootstrap.min.css')}}" rel="stylesheet" />
+<link href="{{=URL('static','css/prism.css')}}" rel="stylesheet" />
+<script src="{{=URL('static','js/prism.js')}}" data-manual ></script>
+<link rel="stylesheet" href="{{=URL('static','css/mycss.css')}}"/>
+
+<link rel="icon" 
+	href="{{=URL('static','images/Icojam-Blue-Bits-Module-puzzle.ico')}}" 
+	type="image/icon">
+<title>{{=titulo}}</title>
+</head>
+<body>
+    <h1><a href="{{=URL('default', 'index')}}">HOME</a></h1>
+	<div class="row">
+        <div class="col-sm-5">
+            <h1>Code Text Editor Area</h1>
+        </div>
+        <div class="col-sm-5">
+            <h1>Results Area <button onClick="vue3.updateSourceCode()">Update</button></h1>
+        </div>
+    </div>
+	<div class="row">
+        <div class="col-sm-5"> 
+			<div id="vue2">
+				<div class="loading-screen" v-if="isLoading"></div>
+				<div v-else>
+                    <ul>
+                        <source-file-line v-for="(line, lineIndex) in sourceCodeLineList"
+                            @insertline="onAddLine(lineIndex)"
+                            @removeline="onRemoveLine(lineIndex)"
+                            @changeline="onChangeLine(lineIndex)"
+                            :key="lineIndex"
+                            :line-prop="line"
+                            :language="language" >
+                            <template v-slot:add-button>
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </template>
+                            <template v-slot:remove-button>
+                                <span class="glyphicon glyphicon-remove"></span>
+                            </template>
+                        </source-file-line>
+					</ul>
+				</div>
+			</div>
+		</div>
+        <div class="col-sm-5"> 
+			<div id="vue3">
+				<div class="loading-screen" v-if="isLoading"></div>
+				<div v-else >
+                    <div v-html="sourceCode" class="target-area">
+                    </div>	
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+{{include 'vue/source-file-line.vue'}}
+
+<script>
+function highlightCallback(){
+    Prism.highlightAll();
+}
+window.addEventListener("load", function(event) {
+    // here is the Vue code
+    vue2.finishLoading();
+    vue3.finishLoading();
+    //alert("terminou de carregar!");
+    //Vue.nextTick(highlightCallback);
+  });
+    
+vue2 = new Vue({
+    el: '#vue2',
+    delimiters: ['${', '}'],
+    data: {
+		sourceCodeLineList: [{vid:0, code_text: '', saved:false}],
+	    isLoading: true,
+        compiledSourceCode: "",
+        language: 'markup'//['markup', 'css', 'javascript'],
+    },//data 
+    watch:{
+        sourceCode: function(){
+            // get the last line
+            var lastLine = this.sourceCodeLineList[this.sourceCodeLineList.length-1];
+            // checks if it is null
+            if (null != lastLine.code_text){
+                //if not null, check if it is empty
+                if (lastLine.code_text.length>0){
+                    //If the last line is used, add a new line
+                    this.addEmptyLine();
+                }
+            }
+        }
+    },//watch
+	methods: {
+        onChangeLine: function (){ 
+            this.sourceCodeLineList.forEach(element => {
+                if (false == element.saved){
+                    var query = element;
+                    var url = "{{=URL('default','json_save_line')}}";
+                    var connection = $.getJSON(url, query).fail(self.on_error);
+                    connection.done(this.checkCodeLine);
+                }
+            });
+            },
+        checkCodeLine: function (line_json){
+            this.sourceCodeLineList[line_json.vid].saved = true;
+        },
+        getServerSourceCode: function () {
+            var url = "{{=URL('default','json_get_source')}}";
+            var connection = $.getJSON(url, '').fail(self.on_error);
+            connection.done(this.codeCallback);
+        },
+        codeCallback: function(lines){
+            this.sourceCodeLineList = lines;
+            this.isLoading = false;
+            if (this.sourceCodeLineList.length>0){
+                
+            }else{
+                this.sourceCodeLineList = [
+                    {vid: 0, vindex: 0, code_text: '<span style="color:red">', saved: false}, 
+                    {vid: 1, vindex: 1, code_text: 'This should<br>', saved: false}, 
+                    {vid: 2, vindex: 2, code_text: '<i> be red <\/i>', saved: false},
+                    {vid: 3, vindex: 3, code_text: '<\/span><br>', saved: false},
+                    {vid: 4, vindex: 4, code_text: '<button onclick="javascript:alert(\'JS!\')">', saved: false},
+                    {vid: 5, vindex: 5, code_text: 'My button', saved: false},
+                    {vid: 6, vindex: 6, code_text: '<\/button>', saved: false},
+                    {vid: 7, vindex: 7, code_text: '<style>', saved: false},
+                    {vid: 8, vindex: 8, code_text: 'button{background: grey}', saved: false},
+                    {vid: 9, vindex: 9, code_text: 'button{background: lightblue}', saved: false},
+                    {vid: 10, vindex: 10, code_text: 'div.target-area{', saved: false},
+                    {vid: 11, vindex: 11, code_text: 'background-color: blue}', saved: false},
+                    {vid: 12, vindex: 12, code_text: '<\/style>', saved: false},
+                    ]
+            }
+            this.isLoading = false;
+        },
+        onAddLine: function (childId){
+            this.sourceCodeLineList.splice(childId, 0, this.getNextVid());
+            this.updateVindex();
+            },
+        onRemoveLine: function (childId){
+            this.sourceCodeLineList.splice(childId, 1);
+            this.updateVindex();
+            },
+        /* Function to update vindex accordingly to array index*/
+        updateVindex: function (){
+            this.sourceCodeLineList.forEach((element, index) => {
+                if (index != element.vindex){
+                    element.vindex = index;
+                }
+            });
+        },
+        finishLoading: function(){
+            this.getServerSourceCode();
+            },
+        addEmptyLine: function (){
+            this.sourceCodeLineList.push(this.newCodeLine(this.getNextVid()));
+            },
+        getNextVid: function (){
+            var lastVid = 0;
+            this.sourceCodeLineList.forEach((element) => {
+                if (lastVid < element.vid){
+                    lastVid = element.vid;
+                }
+            });
+            return ++lastVid;
+        },
+        newCodeLine: function (vidArg){
+            return {vid: vidArg, code_text: "", saved: false};
+        },
+    },// methods
+    computed: {
+        sourceCode: function() {
+        var resultcode_text="";
+        //console.log(" Source: " + this.sourceCodeLineList);
+        this.compiledSourceCode="";
+        this.sourceCodeLineList.forEach(element => {
+            //console.log("Element = "+ element.code_text );
+            if (null != element.code_text){
+                if (element.code_text.length>0){
+                resultcode_text += element.code_text;
+                }
+            }
+            
+            //console.log("Result: " + resultcode_text);
+            });
+        //console.log("Result: " + resultcode_text);
+        this.compiledSourceCode = resultcode_text;
+        return resultcode_text;
+        }
+    },//computed
+})// new Vue
+/* View to display the compiled source code */
+vue3 = new Vue({
+    el: '#vue3',
+    delimiters: ['${', '}'],
+    data: {
+		sourceCode: "Hello World!",
+	    isLoading: true,
+	},//data
+	methods: {
+        finishLoading: function(){
+            if (true == this.isLoading){
+                this.isLoading=false;
+                }
+            },
+        updateSourceCode: function(){
+            this.sourceCode = vue2.sourceCode;
+        },
+        }// methods
+    })// new Vue
+</script>
+</html>

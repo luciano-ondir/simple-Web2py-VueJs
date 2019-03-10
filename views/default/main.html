@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 <div v-cloak id="vue">
-<div style="positon:fixed;top:0;left:0;width:100%;height:100vh;z-index:10000000" v-if="is_loading"> Loading... </div>
+<div style="position:fixed;top:0;left:0;width:100%;height:100vh;z-index:10000000" v-if="is_loading"> Loading... </div>
   ${ message }
   <br>
       <span v-bind:title="message">
@@ -82,7 +82,7 @@ var mainVM = new Vue({
 				return
 			}
 		    this.answer = 'Thinking...';
-		    var url = BASE+'default/search';
+		    var url = BASE+'default/json_search';
 		    var data = {q: this.keywords};
 		    var connection = $.getJSON(url, data).fail(self.on_error);
 		    connection.done(this.queryAnswerCallback);
@@ -103,7 +103,7 @@ vue2 = new Vue({
 	  el: '#vue2',
 	  delimiters: ['${', '}'],
 	  data: {
-	    my_text: 'Segunda vue',
+	    my_text: 'This is the Second Vue Object in Page...',
 	  },
 	  methods: {
 		    reverseMessage: function () {

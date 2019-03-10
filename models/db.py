@@ -1,29 +1,40 @@
 # -*- coding: utf-8 -*-
-
+"""
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
 ## File is released under public domain and you can use without limitations
+## - This application was developed using Visual Studio Code and profited
+## - of pylint. Some lines and comments are there for convenience for this
+## - particular tool. The fake import is to prevent warnings from pylint.
+## - As web2py combines model and controller files in a single file,
+## - imports are not necessary. However, pylint keeps telling that variables
+## - and functions are not declared. To avoid disabling pylint and lose
+## - its support, I adopted such tricks.
 #########################################################################
-
-if 0: 
+"""
+if 0:#pylint: disable=using-constant-test
+    #import sys
+    #sys.path.append('C:\\web2py')
+    #sys.path.append('C:\\web2py\\applications\\web2py_vue\\models')
     import gluon
-    from gluon import * #@UnusedWildImport
-    import gluon.compileapp.local_import_aux as local_import #@UnusedImport
-    from gluon.html import xmlescape #@UnusedImport
-    import gluon.languages.translator as T #@UnusedImport
-    from gluon.sql import SQLDB #@UnusedImport
-    from gluon.sql import SQLField #@UnusedImport
-    #from gluon.sqlhtml import SQLFORM #@UnusedImport
-    #from gluon.sqlhtml import SQLTABLE #@UnusedImport
-    from gluon.tools import * #@UnusedWildImport
-    global cache; cache = gluon.cache.Cache()
-    global LOAD; LOAD  = gluon.compileapp.LoadFactory()
-    global request; request = gluon.globals.Request()
+    from gluon import * #pylint: disable=unused-wildcard-import, redefined-builtin, wildcard-import, pointless-string-statement
+    from gluon.compileapp import local_import_aux as local_import #pylint: disable=unused-import
+    from gluon.cache import Cache as CacheConstructor
+    from gluon.compileapp import LoadFactory as LOAD#pylint: disable=unused-import
+    from gluon.html import xmlescape #pylint: disable=unused-import
+    from gluon.sql import SQLDB #pylint: disable=unused-import
+    from gluon.sql import SQLField #pylint: disable=unused-import
+    #from gluon.sqlhtml import SQLFORM #
+    #from gluon.sqlhtml import SQLTABLE #
+    from gluon.tools import * #pylint: disable=unused-wildcard-import, redefined-builtin, wildcard-import, pointless-string-statement
+
+    global request; request = gluon.globals.Request(0)
+    global cache; cache = CacheConstructor(request)
     global response; response = gluon.globals.Response()
     global session; session = gluon.globals.Session()
     global db; db = DAL()
     global auth; auth = Auth()
-    global crud; crud = Crud()
+    global crud; crud = Crud(0)
     global mail; mail = Mail()
     global plugins; plugins = PluginManager()
     global service; service = Service()
@@ -126,3 +137,46 @@ auth.settings.reset_password_requires_verification = True
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
+
+db.define_table(
+    'doc',
+    Field('title', type='string', requires=IS_LENGTH(80)),
+    Field('body', 'text'))
+
+db.define_table(
+    'webpages',
+    Field('title', type='string', requires=IS_LENGTH(80)),
+    Field('body', 'text'))
+
+db.define_table(
+    'systems',
+    Field('name', type='string', requires=IS_LENGTH(80)),
+    Field('body', 'text'))
+
+db.define_table(
+    'code_lines',
+    Field('vid', type='integer'),
+    Field('code_text', type='string'),
+    Field('saved', type='boolean'),
+    Field('vindex', type='string')
+)
+
+## Initial filling of the table
+filled_tables = False
+if db(db.doc).isempty():
+    from gluon.contrib.populate import populate
+    populate(db.doc, 100)
+    filled_tables = True
+
+if db(db.webpages).isempty():
+    from gluon.contrib.populate import populate
+    populate(db.webpages, 20)
+    filled_tables = True
+
+if db(db.systems).isempty():
+    from gluon.contrib.populate import populate
+    populate(db.systems, 50)
+    filled_tables = True
+
+if filled_tables is True:
+    db.commit()

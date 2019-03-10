@@ -5,6 +5,9 @@
 ## Customize your APP title, subtitle and menus here
 #########################################################################
 
+if 0:#pylint: disable=using-constant-test
+    from web2py_vue.models.db import * #pylint: disable=unused-wildcard-import, redefined-builtin, wildcard-import, pointless-string-statement
+
 response.logo = A(B('web',SPAN(2),'py'),XML('&trade;&nbsp;'),
                   _class="navbar-brand",_href="http://www.web2py.com/",
                   _id="web2py-logo")
@@ -16,6 +19,7 @@ response.meta.author = myconf.get('app.author')
 response.meta.description = myconf.get('app.description')
 response.meta.keywords = myconf.get('app.keywords')
 response.meta.generator = myconf.get('app.generator')
+
 
 ## your http://google.com/analytics id
 response.google_analytics_id = None
